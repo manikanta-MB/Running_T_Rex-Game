@@ -46,7 +46,7 @@ class Dino:
             return True
     def move_up(self):
         #It is moving the dinosaur towards top, upto 0 on y-axis.
-        self.y = max(self.y-100,0)
+        self.y = max(self.y-100,100)
         self.direction = "up"
     def draw(self):
         """It draws the dinosaur image on the given position"""
@@ -176,7 +176,7 @@ class Game:
         # So that we can stop the game.
         if(self.countdown == 0):
             pygame.mixer.music.pause()
-            raise TimeUp
+            raise TimeUp("Time Completed")
         # Drawing all the objects with changes, onto the Game Board.
         self.grass.draw()
         self.lamp.draw()
