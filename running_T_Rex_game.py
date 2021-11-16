@@ -1,3 +1,9 @@
+""""It is a game like "running T-Rex", but we are using lamps in place of hurdles,
+grass to walk.One more thing to note here is we are not giving any score here,
+but we are giving some time constraints.If dinosaur didn't hit any lamp during
+this time, then User can win this game, otherwise it leads to failure of this game.
+"""
+
 import os
 import time
 from collections import deque
@@ -232,4 +238,5 @@ class Game:
 
 if __name__=="__main__":
     game = Game()
+    # running or starting the game.
     game.run()
