@@ -11,7 +11,7 @@ class CollisionError(Exception):
 class Dino:
     def __init__(self,parent_screen):
         self.parent_screen = parent_screen
-        self.image = pygame.image.load(os.getcwd()+"/resources/dino_image_3.jpg").convert()
+        self.image = pygame.image.load(os.getcwd()+"/resources/dino_image_5.jpg").convert()
         self.x = 0
         self.y = 250
         self.image_height = 100
