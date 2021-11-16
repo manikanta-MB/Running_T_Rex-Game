@@ -15,7 +15,7 @@ class Dino:
         self.y = max(self.y-100,0)
     def draw(self):
         self.parent_screen.blit(self.image,(self.x,self.y))
-        self.y = min(self.y+30,150)
+        self.y = min(self.y+50,150)
 class Lamp:
     def __init__(self,parent_screen):
         self.parent_screen = parent_screen
@@ -39,14 +39,13 @@ class Lamp:
         else:
             self.shift()
             self.x[0] -= 219
-    '''
     def draw(self):
         self.modify()
         # self.parent_screen.fill((255,255,255))
         for i in range(5):
-            if(random.randint(0,1)):
+            if(self.positions_to_display[i]):
                 self.parent_screen.blit(self.image,(self.x[i],self.y[i]))
-    '''
+        self.swap_positions()
 class Grass:
     def __init__(self,parent_screen):
         self.parent_screen = parent_screen
@@ -66,22 +65,20 @@ class Grass:
         else:
             self.shift()
             self.x[0] -= 219
-    '''
     def draw(self):
         self.modify()
         self.parent_screen.fill((255,255,255))
         for i in range(5):
             self.parent_screen.blit(self.image,(self.x[i],self.y[i]))
-    '''
 class Game:
     def __init__(self):
         pygame.init()
         self.surface = pygame.display.set_mode((1095,500))
         self.grass = Grass(self.surface)
-        # self.grass.draw()
         self.lamp = Lamp(self.surface)
-        # self.lamp.draw()
         self.dino = Dino(self.surface)
+        self.countdown = 60
+    '''
     def draw(self):
         self.grass.modify()
         self.lamp.modify()
@@ -92,23 +89,58 @@ class Game:
                 self.surface.blit(self.lamp.image,(self.lamp.x[i],self.lamp.y[i]))
         self.lamp.swap_positions()
         self.dino.draw()
+    '''
+    def reset(self):
+        self.grass = Grass(self.surface)
+        self.lamp = Lamp(self.surface)
+        self.dino = Dino(self.surface)
+        self.countdown = 60
+    def display_time(self):
+        mins, secs = divmod(self.countdown, 60)
+        timer = "Timer: {:02d}:{:02d}".format(mins, secs)
+        font = pygame.font.SysFont('arial',20)
+        timer_block = font.render(timer,True,(0,0,0))
+        self.surface.blit(timer_block,(850,10))
+        self.countdown -= 1
+    def show_game_win_message(self):
+        self.surface.fill((255,255,255))
+        font = pygame.font.SysFont('arial',30)
+        line1 = font.render("Congrats! You Won the Game",True,(0,0,0))
+        line2 = font.render("Want to Play Again, press Enter",True,(0,0,0))
+        self.surface.blit(line1,(300,200))
+        self.surface.blit(line2,(300,250))
+        pygame.display.flip()
     def play(self):
-        self.draw()
+        if(self.countdown == 0):
+            raise TimeoutError
+        self.grass.draw()
+        self.lamp.draw()
+        self.dino.draw()
+        self.display_time()
         pygame.display.flip()
         
     def run(self):
         running = True
+        pause = False
         while running:
             for event in pygame.event.get():
                 if event.type == KEYDOWN:
                     if event.key == K_ESCAPE:
                         running = False
-                    if event.key == K_SPACE:
-                        self.dino.move_up()
+                    if event.key == K_RETURN:
+                        pause = False
+                    if not pause:
+                        if event.key == K_SPACE:
+                            self.dino.move_up()
                 elif event.type == QUIT:
                     running = False
-            
-            self.play()
+            try:
+                if not pause:
+                    self.play()
+            except TimeoutError:
+                self.show_game_win_message()
+                pause = True
+                self.reset()
             time.sleep(0.5)
 
 if __name__=="__main__":
