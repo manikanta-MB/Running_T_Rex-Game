@@ -4,14 +4,20 @@ from collections import deque
 import pygame
 from pygame.locals import *
 
+WHITE_COLOR = (255,255,255)
+BLACK_COLOR = (0,0,0)
+RED_COLOR = (255,0,0)
+GREEN_COLOR = (0,255,0)
+BLUE_COLOR = (0,0,255)
+
 # Custom Exception Classes
 class CollisionError(Exception):
     """This is a Collision Exception Class that we will use when the collision occurs."""
     def __init__(self,message):
         self.message = message
 
-class TimeUpError(Exception):
-    """This is a TimeUpError Exception Class that we will use when the time
+class TimeUp(Exception):
+    """This is a TimeUp Exception Class that we will use when the time
     for the game is completed.
     """
     def __init__(self,message):
@@ -20,17 +26,20 @@ class TimeUpError(Exception):
 class Dino:
     """This Class is designed for the Dinosaur object in the Game.
     It will take care about all the operations that dinosaur will do,
-    like moving up, moving down, collision with lamp cases.
+    like moving up, moving down, collision with lamp.
     """
     def __init__(self,parent_screen):
         self.parent_screen = parent_screen
+        # loading the dinosaur image.
         self.image = pygame.image.load(os.getcwd()+"/resources/dino_image_5.jpg").convert()
         self.x = 0
         self.y = 250
-        self.image_height = 100
+        self.image_height = 100 # It is the height of the dinosaur image.
+        # By default we specify the direction as down unless user presses the "Space Bar".
+        # Space Bar changes the direction to "up".
         self.direction = "down"
     def is_collision(self):
-        # It is checking if the dinosaur hit the lamp(it starts at 250 on x-axis)
+        # It is checking if the dinosaur hits the lamp(it starts at 250 on y-axis)
         if self.y+self.image_height < 270:
             return False
         else:
@@ -88,7 +97,7 @@ class Grass:
         self.y = 300
     def draw(self):
         """It draws the Grass on the Game Board."""
-        self.parent_screen.fill((255,255,255))
+        self.parent_screen.fill(WHITE_COLOR)
         for i in range(5):
             self.parent_screen.blit(self.image,(self.x[i],self.y))
 
@@ -98,8 +107,11 @@ class Game:
     """
     def __init__(self):
         pygame.init() # initializing the game board.
-        pygame.mixer.init() # intializing the game backgound music.
-        self.surface = pygame.display.set_mode((1095,500)) # setting the resolution of game board.
+        pygame.mixer.init() # intializing the music in game.
+        game_board_width = 1095
+        game_board_height = 500
+        # setting the resolution of game board.
+        self.surface = pygame.display.set_mode((game_board_width,game_board_height))
         self.play_background_music() # playing background music for this game.
         # Initializing all the helper Classes.
         self.grass = Grass(self.surface)
@@ -123,29 +135,34 @@ class Game:
         mins, secs = divmod(self.countdown, 60)
         timer = "Timer: {:02d}:{:02d}".format(mins, secs)
         font = pygame.font.SysFont('arial',20)
-        timer_block = font.render(timer,True,(0,0,0))
-        self.surface.blit(timer_block,(850,10))
+        timer_block = font.render(timer,True,BLACK_COLOR)
+        position_of_timer = (850,10)
+        self.surface.blit(timer_block,position_of_timer)
         self.countdown -= 1
     def show_game_win_message(self):
         """As the name suggests, it will display a Succes message when you won the game."""
-        self.surface.fill((255,255,255))
+        self.surface.fill(WHITE_COLOR)
         font = pygame.font.SysFont('arial',30)
-        line1 = font.render("Congrats! You Won the Game",True,(0,255,0))
-        line2 = font.render("Want to Play Again, press Enter",True,(0,0,255))
-        self.surface.blit(line1,(300,200))
-        self.surface.blit(line2,(300,250))
+        line1 = font.render("Congrats! You Won the Game",True,GREEN_COLOR)
+        line2 = font.render("Want to Play Again, press Enter",True,BLUE_COLOR)
+        position_of_line1 = (300,200)
+        position_of_line2 = (300,250)
+        self.surface.blit(line1,position_of_line1)
+        self.surface.blit(line2,position_of_line2)
         pygame.display.flip()
     def show_game_lost_message(self):
         """As the name suggests, it will display a Failure message when you fail the game or
         hit the lamp.Along with that message, it will also give you an other option to play the
         Game Again.
         """
-        self.surface.fill((255,255,255))
+        self.surface.fill(WHITE_COLOR)
         font = pygame.font.SysFont('arial',30)
-        line1 = font.render("Oh! You lost the game",True,(255,0,0))
-        line2 = font.render("Wanna Play Again!, press Enter",True,(0,0,255))
-        self.surface.blit(line1,(300,200))
-        self.surface.blit(line2,(300,250))
+        line1 = font.render("Oh! You lost the game",True,RED_COLOR)
+        line2 = font.render("Wanna Play Again!, press Enter",True,BLUE_COLOR)
+        position_of_line1 = (300,200)
+        position_of_line2 = (300,250)
+        self.surface.blit(line1,position_of_line1)
+        self.surface.blit(line2,position_of_line2)
         pygame.display.flip()
     def play_sound(self,file_path):
         """It will play the sound when the dinosaur hits the lamp."""
@@ -159,7 +176,7 @@ class Game:
         # So that we can stop the game.
         if(self.countdown == 0):
             pygame.mixer.music.pause()
-            raise TimeUpError
+            raise TimeUp
         # Drawing all the objects with changes, onto the Game Board.
         self.grass.draw()
         self.lamp.draw()
@@ -168,6 +185,7 @@ class Game:
         pygame.display.flip()
         # First condition checks if the first lamp is displayed, in the current Lamp Circle.
         # Then only there is a possiblity for the dinosaur to hit the lamp.
+        # Only first lamp in the current window can be hit by Dinosaur.
         if self.lamp.positions_to_display[0]:
             # It checks if the dinosaur hits the Lamp.
             if self.dino.is_collision():
@@ -178,7 +196,7 @@ class Game:
     def run(self):
         """This method is the Head of this Entire Game.
         It will take all the inputs or actions from the user and then apply the changes
-        accordingly.
+        accordingly and then display them.
         """
         running = True
         pause = False
@@ -198,7 +216,7 @@ class Game:
             try:
                 if not pause:
                     self.play()
-            except TimeUpError:
+            except TimeUp:
                 self.show_game_win_message()
                 pause = True
                 self.reset()
@@ -209,6 +227,7 @@ class Game:
                 pause = True
                 self.reset()
             # It is the delay time between every two adjacent renderings or changes on the Game Board.
+            # It decides the speed of the game.
             time.sleep(0.5)
 
 if __name__=="__main__":
