@@ -1,6 +1,5 @@
 import os
 import time
-#import random
 from collections import deque
 import pygame
 from pygame.locals import *
@@ -14,10 +13,11 @@ class Dino:
         self.parent_screen = parent_screen
         self.image = pygame.image.load(os.getcwd()+"/resources/dino_image_3.jpg").convert()
         self.x = 0
-        self.y = 150
+        self.y = 250
+        self.image_height = 100
         self.direction = "down"
     def is_collision(self):
-        if self.y+100 < 170:
+        if self.y+self.image_height < 270:
             return False
         else:
             return True
@@ -26,7 +26,7 @@ class Dino:
         self.direction = "up"
     def draw(self):
         if(self.direction == "down"):
-            self.y = min(self.y+50,150)
+            self.y = min(self.y+50,250)
         self.parent_screen.blit(self.image,(self.x,self.y))
         self.direction = "down"
         # self.y = min(self.y+50,150)
@@ -35,7 +35,7 @@ class Lamp:
         self.parent_screen = parent_screen
         self.image = pygame.image.load(os.getcwd()+"/resources/fire_lamp_3.jpg").convert()
         self.x = [916]*5
-        self.y = [150]*5
+        self.y = [250]*5
         self.positions_to_display = deque([True,False,False,False,True])
     def swap_positions(self):
         first_ele = self.positions_to_display.popleft()
@@ -62,7 +62,7 @@ class Grass:
         self.parent_screen = parent_screen
         self.image = pygame.image.load(os.getcwd()+"/resources/grass_image_4.jpg").convert()
         self.x = [876]*5
-        self.y = [200]*5
+        self.y = [300]*5
     def shift(self):
         for i in range(len(self.x)-1,0,-1):
             self.x[i] = self.x[i-1]
@@ -81,11 +81,16 @@ class Grass:
 class Game:
     def __init__(self):
         pygame.init()
+        pygame.mixer.init()
         self.surface = pygame.display.set_mode((1095,500))
+        self.play_background_music()
         self.grass = Grass(self.surface)
         self.lamp = Lamp(self.surface)
         self.dino = Dino(self.surface)
         self.countdown = 60
+    def play_background_music(self):
+        pygame.mixer.music.load(os.getcwd()+"/resources/bg_music_1.mp3")
+        pygame.mixer.music.play()
     def reset(self):
         self.grass = Grass(self.surface)
         self.lamp = Lamp(self.surface)
@@ -114,8 +119,12 @@ class Game:
         self.surface.blit(line1,(300,200))
         self.surface.blit(line2,(300,250))
         pygame.display.flip()
+    def play_sound(self,file_path):
+        sound = pygame.mixer.Sound(file_path)
+        pygame.mixer.Sound.play(sound)
     def play(self):
         if(self.countdown == 0):
+            pygame.mixer.music.pause()
             raise TimeoutError
         self.grass.draw()
         self.lamp.draw()
@@ -124,9 +133,8 @@ class Game:
         pygame.display.flip()
         if self.lamp.positions_to_display[0] and self.lamp.x[0]==40:
             if self.dino.is_collision():
-                print(self.lamp.positions_to_display)
-                print(self.dino.y)
-                time.sleep(4.0)
+                pygame.mixer.music.pause()
+                self.play_sound(os.getcwd()+"/resources/crash.mp3")
                 raise CollisionError("collision occured.")
         
     def run(self):
@@ -138,6 +146,7 @@ class Game:
                     if event.key == K_ESCAPE:
                         running = False
                     if event.key == K_RETURN:
+                        pygame.mixer.music.unpause()
                         pause = False
                     if not pause:
                         if event.key == K_SPACE:
@@ -152,6 +161,7 @@ class Game:
                 pause = True
                 self.reset()
             except CollisionError:
+                time.sleep(2.0)
                 self.show_game_lost_message()
                 pause = True
                 self.reset()
