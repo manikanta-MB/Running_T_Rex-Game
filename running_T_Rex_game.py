@@ -5,24 +5,38 @@ from collections import deque
 import pygame
 from pygame.locals import *
 
+class CollisionError(Exception):
+    def __init__(self,message):
+        self.message = message
+
 class Dino:
     def __init__(self,parent_screen):
         self.parent_screen = parent_screen
         self.image = pygame.image.load(os.getcwd()+"/resources/dino_image_3.jpg").convert()
         self.x = 0
         self.y = 150
+        self.direction = "down"
+    def is_collision(self):
+        if self.y+100 < 170:
+            return False
+        else:
+            return True
     def move_up(self):
         self.y = max(self.y-100,0)
+        self.direction = "up"
     def draw(self):
+        if(self.direction == "down"):
+            self.y = min(self.y+50,150)
         self.parent_screen.blit(self.image,(self.x,self.y))
-        self.y = min(self.y+50,150)
+        self.direction = "down"
+        # self.y = min(self.y+50,150)
 class Lamp:
     def __init__(self,parent_screen):
         self.parent_screen = parent_screen
         self.image = pygame.image.load(os.getcwd()+"/resources/fire_lamp_3.jpg").convert()
-        self.x = [876]*5
+        self.x = [916]*5
         self.y = [150]*5
-        self.positions_to_display = deque([False,False,False,True,True])
+        self.positions_to_display = deque([True,False,False,False,True])
     def swap_positions(self):
         first_ele = self.positions_to_display.popleft()
         self.positions_to_display.append(first_ele)
@@ -32,20 +46,17 @@ class Lamp:
             self.y[i] = self.y[i-1]
     def modify(self):
         if(self.x[0]-219 < 0):
-            self.x.append(-1)
-            self.y.append(-1)
-            self.shift()
-            del self.x[0],self.y[0]
+            pass
         else:
             self.shift()
             self.x[0] -= 219
     def draw(self):
         self.modify()
         # self.parent_screen.fill((255,255,255))
+        self.swap_positions()
         for i in range(5):
             if(self.positions_to_display[i]):
                 self.parent_screen.blit(self.image,(self.x[i],self.y[i]))
-        self.swap_positions()
 class Grass:
     def __init__(self,parent_screen):
         self.parent_screen = parent_screen
@@ -58,10 +69,7 @@ class Grass:
             self.y[i] = self.y[i-1]
     def modify(self):
         if(self.x[0]-219 < 0):
-            self.x.append(-1)
-            self.y.append(-1)
-            self.shift()
-            del self.x[0],self.y[0]
+            pass
         else:
             self.shift()
             self.x[0] -= 219
@@ -78,18 +86,6 @@ class Game:
         self.lamp = Lamp(self.surface)
         self.dino = Dino(self.surface)
         self.countdown = 60
-    '''
-    def draw(self):
-        self.grass.modify()
-        self.lamp.modify()
-        self.surface.fill((255,255,255))
-        for i in range(5):
-            self.surface.blit(self.grass.image,(self.grass.x[i],self.grass.y[i]))
-            if(self.lamp.positions_to_display[i]):
-                self.surface.blit(self.lamp.image,(self.lamp.x[i],self.lamp.y[i]))
-        self.lamp.swap_positions()
-        self.dino.draw()
-    '''
     def reset(self):
         self.grass = Grass(self.surface)
         self.lamp = Lamp(self.surface)
@@ -105,8 +101,16 @@ class Game:
     def show_game_win_message(self):
         self.surface.fill((255,255,255))
         font = pygame.font.SysFont('arial',30)
-        line1 = font.render("Congrats! You Won the Game",True,(0,0,0))
-        line2 = font.render("Want to Play Again, press Enter",True,(0,0,0))
+        line1 = font.render("Congrats! You Won the Game",True,(0,255,0))
+        line2 = font.render("Want to Play Again, press Enter",True,(0,0,255))
+        self.surface.blit(line1,(300,200))
+        self.surface.blit(line2,(300,250))
+        pygame.display.flip()
+    def show_game_lost_message(self):
+        self.surface.fill((255,255,255))
+        font = pygame.font.SysFont('arial',30)
+        line1 = font.render("Oh! You lost the game",True,(255,0,0))
+        line2 = font.render("Wanna Play Again!, press Enter",True,(0,0,255))
         self.surface.blit(line1,(300,200))
         self.surface.blit(line2,(300,250))
         pygame.display.flip()
@@ -118,6 +122,12 @@ class Game:
         self.dino.draw()
         self.display_time()
         pygame.display.flip()
+        if self.lamp.positions_to_display[0] and self.lamp.x[0]==40:
+            if self.dino.is_collision():
+                print(self.lamp.positions_to_display)
+                print(self.dino.y)
+                time.sleep(4.0)
+                raise CollisionError("collision occured.")
         
     def run(self):
         running = True
@@ -139,6 +149,10 @@ class Game:
                     self.play()
             except TimeoutError:
                 self.show_game_win_message()
+                pause = True
+                self.reset()
+            except CollisionError:
+                self.show_game_lost_message()
                 pause = True
                 self.reset()
             time.sleep(0.5)
